@@ -101,6 +101,8 @@ public class BackspaceHandler extends EditorWriteActionHandler {
 
     HighlighterIterator hiterator = ((EditorEx)editor).getHighlighter().createIterator(offset);
     boolean wasClosingQuote = quoteHandler != null && quoteHandler.isClosingQuote(hiterator, offset);
+    BraceMatcher braceMatcher = BraceMatchingUtil.getBraceMatcher(fileType, hiterator);
+    boolean wasBraceToken = braceMatcher.isLBraceToken(hiterator, chars, fileType) || braceMatcher.isRBraceToken(hiterator, chars, fileType);
 
     myOriginalHandler.execute(originalEditor, caret, dataContext);
 
@@ -119,14 +121,11 @@ public class BackspaceHandler extends EditorWriteActionHandler {
       char c1 = chars.charAt(offset);
       if (c1 != getRightChar(c)) return true;
 
-      HighlighterIterator iterator = ((EditorEx)editor).getHighlighter().createIterator(offset);
-      BraceMatcher braceMatcher = BraceMatchingUtil.getBraceMatcher(fileType, iterator);
-      if (!braceMatcher.isLBraceToken(iterator, chars, fileType) &&
-          !braceMatcher.isRBraceToken(iterator, chars, fileType)
-          ) {
+      if (!wasBraceToken) {
         return true;
       }
 
+      HighlighterIterator iterator = ((EditorEx)editor).getHighlighter().createIterator(offset);
       int rparenOffset = BraceMatchingUtil.findRightmostRParen(iterator, iterator.getTokenType(), chars, fileType);
       if (rparenOffset >= 0){
         iterator = ((EditorEx)editor).getHighlighter().createIterator(rparenOffset);
